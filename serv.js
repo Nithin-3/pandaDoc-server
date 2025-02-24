@@ -1,44 +1,25 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-
-const wait = []
-const room = []
-const PORT = process.env.PORT || 3000;
+const io = require('socket.io')(3030, {
+  cors: {
+    origin: "*", // The URL of your frontend
+    methods: ["GET", "POST"],
+    // credentials: true
+  },
+}); 
+const online = {}
 io.on('connection', (socket) => {
-    socket.on('set',ui=>{
-        console.log("===>"+ui);
-            socket.join(ui);
-        // room[ui] = room[ui] || []
-        // if(room[ui].length < 2){
-        //     room[ui].push(socket);
-        //     socket.uu = ui;
-        // }
-        // if(room[ui].length == 2){
-        //     room[ui].map(v=>{
-        //         io.to(ui).emit('chat',ui,v);
-        //     })
-        //     room[ui] = [];
-        // }
-    });
-    socket.on('chat', (rm,msg) => {
-        console.log(rm,msg)
-        io.to(rm).emit('cht',msg);
-        // if(room[socket.uu].length != 2){
+  socket.on('set', (roomName) => {
+    console.log(`${socket.id} is joining room: ${roomName}`);
+    socket.join(roomName);
+    online[`${roomName}`] = true;
+  });
 
-        //     wait[socket.uu] = wait[socket.uu] || []
-        //     wait[socket.uu] =  [ ...wait[socket.uu],msg ];}
-    });
-    socket.on('disconnect', () => {
-        console.log('User disconnected:', socket.id,room[socket.uu]);
-    });
-});
+  socket.on('chat', (roomName, message) => {
+    console.log(`Message in room ${roomName}: ${message}`);
+    io.to(roomName).emit(online[`${roomName}`]?"msg":"off", message);
+  });
 
-server.listen(PORT,'0.0.0.0', () => {
-    console.log(`Server is listening on http://localhost:${PORT}`);
+  socket.on('disconnect', () => {
+    console.log('User disconnected: ' + socket);
+  });
 });
 
