@@ -12,7 +12,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chat', (roomName, message) => {
-    console.log(`Message in room ${roomName}: ${message}`);
+    console.log(message);
     io.to(roomName).emit("msg", message);
   });
 
