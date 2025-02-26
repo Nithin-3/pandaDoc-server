@@ -1,8 +1,6 @@
 const io = require('socket.io')(3030, {
   cors: {
     origin: "*", // The URL of your frontend
-    methods: ["GET", "POST"],
-    // credentials: true
   },
 }); 
 const online = {}
@@ -15,7 +13,7 @@ io.on('connection', (socket) => {
 
   socket.on('chat', (roomName, message) => {
     console.log(`Message in room ${roomName}: ${message}`);
-    io.to(roomName).emit(online[`${roomName}`]?"msg":"off", message);
+    io.to(roomName).emit("msg", message);
   });
 
   socket.on('disconnect', () => {
