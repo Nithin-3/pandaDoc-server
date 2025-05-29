@@ -3,19 +3,35 @@ const exp = require('express');
 const mult = require('multer');
 const {Server} = require('socket.io')
 const rest = exp();
+rest.use(exp.json())
 const server = https.createServer(rest);
 const io = new Server (server, {
     cors: {
         origin: "*",
     },
 }); 
-const fls = mult({ dest:'sndFls/' })
 const online = new Map();
 const onSock = new Map();
-rest.get('/:uid',(rq,rs)=>{
-    rs.send(online.get(rq.params.uid))
+const saveSys = mult.diskStorage({
+    destination:(rq,file,cd)=>{
+        const { receiverId, senderId } = req.body
+        if (!receiverId || !senderId) return cb(new Error("Missing ids"))
+        const dir = path.join(__dirname, 'uploads', receiverId, senderId)
+        fs.mkdir(dir, { recursive: true }, (err) => cb(err, dir))
+    },
+    filename:(rq,file,cb)=>{
+        cb(null,`${Date.now()}°${Math.round(Math.random() * 1E9)}°${file.originalname}`)
+    }
 })
-rest.post('/',fls.array('array',10),(rq,rs)=>{
+const fls = mult({saveSys})
+const onlineCk = (rq,rs,next)=>{
+    if(!online.has(rq.headers.auth)) return rs.status(403).send("unknown sender")
+    next()
+}
+rest.get('/:uid',(rq,rs)=>{
+    rs.send(online.has(rq.params.uid))
+})
+rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
     console.log(req.files);
     rs.send(req.files.length);
 })
