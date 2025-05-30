@@ -1,8 +1,12 @@
 const https = require('http');
 const exp = require('express');
 const mult = require('multer');
-const {Server} = require('socket.io')
+const fs = require('fs');
+const path = require('path');
+const {Server} = require('socket.io');
+const cors = require('cors')
 const rest = exp();
+rest.use(cors())
 rest.use(exp.json())
 const server = https.createServer(rest);
 const io = new Server (server, {
@@ -14,9 +18,9 @@ const online = new Map();
 const onSock = new Map();
 const saveSys = mult.diskStorage({
     destination:(rq,file,cd)=>{
-        const { receiverId, senderId } = req.body
+        const { receiverId, senderId } = rq.body
         if (!receiverId || !senderId) return cb(new Error("Missing ids"))
-        const dir = path.join(__dirname, 'uploads', receiverId, senderId)
+        const dir = path.join(__dirname, 'chtFls', receiverId, senderId)
         fs.mkdir(dir, { recursive: true }, (err) => cb(err, dir))
     },
     filename:(rq,file,cb)=>{
@@ -32,8 +36,8 @@ rest.get('/:uid',(rq,rs)=>{
     rs.send(online.has(rq.params.uid))
 })
 rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
-    console.log(req.files);
-    rs.send(req.files.length);
+    console.log(rq.files);
+    rs.send(rq.files.length);
 })
 io.on('connection', (socket) => {
     socket.on('set', (roomName) => {
@@ -47,6 +51,18 @@ io.on('connection', (socket) => {
         console.log(message);
         io.to(roomName).emit("msg", message);
     });
+
+    socket.on('call',(roomName,yar, offer)=>{
+        io.to(roomName).emit('ring',yar,offer);
+    })
+    
+    socket.on('answer',(roomName,yar,answer)=>{
+        io.to(roomName).emit('accept',yar,answer);
+    })
+
+    socket.on("bridge",(roomName,yar,candidate)=>{
+        io.to(roomName).emit('sbridge',yar,candidate)
+    })
 
     socket.on('disconnect', () => {
         const room = onSock.get(socket.id)
