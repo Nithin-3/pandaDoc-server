@@ -46,13 +46,10 @@ io.on('connection', (socket) => {
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
     });
-
     socket.on('chat', (roomName, message) => {
-        console.log(message);
+        console.log(message,`#${roomName}#`);
         io.to(roomName).emit("msg", message);
     });
-
-
     socket.on('offer', (to, offer) => io.to(to).emit('offer', offer));
     socket.on('answer', (to, answer) => io.to(to).emit('answer', answer));
     socket.on('candidate', (to, candidate) => io.to(to).emit('candidate', candidate));
@@ -73,7 +70,6 @@ io.on('connection', (socket) => {
                     'Content-Length': data.length
                 }
             };
-
             const req = https.request(options, res => {
                 let body = '';
                 res.on('data', chunk => {
@@ -83,17 +79,12 @@ io.on('connection', (socket) => {
                     console.log('Response:', body);
                 });
             });
-
             req.on('error', error => {
                 console.error('Error:', error);
             });
-
             req.write(data);
             req.end();
-
-
         }
-        console.log('User disconnected: ' + socket);
     });
 });
 server.listen(3030)
