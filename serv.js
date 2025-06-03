@@ -46,14 +46,12 @@ io.on('connection', (socket) => {
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
     });
-    socket.on('chat', (roomName, message) => {
-        console.log(message,`#${roomName}#`);
-        io.to(roomName).emit("msg", message);
-    });
+    socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
     socket.on('offer', (to, vid, offer) => io.to(to).emit('offer', vid, offer));
     socket.on('answer', (to, answer) => io.to(to).emit('answer', answer));
     socket.on('candidate', (to, candidate) => io.to(to).emit('candidate', candidate));
     socket.on('end-call', (to) => io.to(to).emit('end-call'));
+    socket.on('rq-call', (to,vid) => io.to(to).emit('rq-call',vid));
     socket.on('disconnect', () => {
         const room = onSock.get(socket.id)
         if(room){
