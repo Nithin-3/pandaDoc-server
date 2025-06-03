@@ -50,7 +50,7 @@ io.on('connection', (socket) => {
         console.log(message,`#${roomName}#`);
         io.to(roomName).emit("msg", message);
     });
-    socket.on('offer', (to, offer) => io.to(to).emit('offer', offer));
+    socket.on('offer', (to, vid, offer) => io.to(to).emit('offer', vid, offer));
     socket.on('answer', (to, answer) => io.to(to).emit('answer', answer));
     socket.on('candidate', (to, candidate) => io.to(to).emit('candidate', candidate));
     socket.on('end-call', (to) => io.to(to).emit('end-call'));
