@@ -50,8 +50,8 @@ io.on('connection', (socket) => {
     socket.on('offer', (to,offer) => io.to(to).emit('offer', offer));
     socket.on('answer', (to, answer) => io.to(to).emit('answer', answer));
     socket.on('candidate', (to, candidate) => io.to(to).emit('candidate', candidate));
-    socket.on('end-call', (to) => io.to(to).emit('end-call'));
-    socket.on('rq-call', (to,vid) => io.to(to).emit('rq-call',vid));
+    socket.on('endcall', (to) => io.to(to).emit('endcall'));
+    socket.on('rqcall', (to,vid) => io.to(to).emit('rqcall',vid));
     socket.on('disconnect', () => {
         const room = onSock.get(socket.id)
         if(room){
