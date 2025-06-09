@@ -4,7 +4,8 @@ const mult = require('multer');
 const fs = require('fs');
 const path = require('path');
 const {Server} = require('socket.io');
-const cors = require('cors')
+const cors = require('cors');
+const { off } = require('process');
 const rest = exp();
 rest.use(cors())
 rest.use(exp.json())
@@ -47,11 +48,17 @@ io.on('connection', (socket) => {
         online.set(roomName,socket.id);
     });
     socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
-    socket.on('offer', (to,offer) => io.to(to).emit('offer', offer));
-    socket.on('answer', (to, answer) => io.to(to).emit('answer', answer));
-    socket.on('candidate', (to, candidate) => io.to(to).emit('candidate', candidate));
-    socket.on('endcall', (to) => io.to(to).emit('endcall'));
-    socket.on('rqcall', (to,vid) => io.to(to).emit('rqcall',vid));
+    socket.on('offer', (to, yar,offer) => {
+        console.log(`offer=> ${yar} => ${to}`);
+        io.to(to).emit('offer',yar, offer)});
+    socket.on('answer', (to, yar, answer) => {
+        console.log(`answer => ${yar} => ${to} `);
+    io.to(to).emit('answer',yar, answer)});
+    socket.on('ice', (to, yar, candidate) => {
+        console.log(`ice => ${yar} => ${to} `);
+        io.to(to).emit('ice',yar, candidate)});
+    socket.on('encall', (to) => io.to(to).emit('encall'));
+    socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
     socket.on('disconnect', () => {
         const room = onSock.get(socket.id)
         if(room){
