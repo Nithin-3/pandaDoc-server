@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const {Server} = require('socket.io');
 const cors = require('cors');
-const { off } = require('process');
+const encod = new TextEncoder();
 const rest = exp();
 rest.use(cors())
 rest.use(exp.json())
@@ -18,13 +18,13 @@ const io = new Server (server, {
 const online = new Map();
 const onSock = new Map();
 const saveSys = mult.diskStorage({
-    destination:(rq,file,cd)=>{
-        const { receiverId, senderId } = rq.body
-        if (!receiverId || !senderId) return cb(new Error("Missing ids"))
-        const dir = path.join(__dirname, 'chtFls', receiverId, senderId)
+    destination:(rq,_file,cb)=>{
+        const { uid, yar } = rq.body
+        if (!uid || !yar) return cb(new Error("Missing ids"))
+        const dir = path.join(__dirname, 'chtFls', uid, yar)
         fs.mkdir(dir, { recursive: true }, (err) => cb(err, dir))
     },
-    filename:(rq,file,cb)=>{
+    filename:(_rq,file,cb)=>{
         cb(null,`${Date.now()}°${Math.round(Math.random() * 1E9)}°${file.originalname}`)
     }
 })
@@ -33,6 +33,33 @@ const onlineCk = (rq,rs,next)=>{
     if(!online.has(rq.headers.auth)) return rs.status(403).send("unknown sender")
     next()
 }
+const ckFls = (Path) => {
+    const tree = [];
+    const rec = (currentPath) => {
+        try {
+            const items = fs.readdirSync(currentPath);
+            for (const item of items) {
+                const fullPath = path.join(currentPath, item);
+                const stats = fs.statSync(fullPath);
+                if (stats.isDirectory()) {
+                    rec(fullPath);
+                } else if (stats.isFile()) {
+                    tree.push(fullPath.replace(`${__dirname}`,''));
+                }
+            }
+        } catch (error) {
+            console.error('Error reading directory:', error);
+        }
+    };
+    try{
+        const meta = fs.statSync(Path);
+        meta.isDirectory() && rec(Path);
+        meta.isFile() && tree.push(Path.replace(`${__dirname}`,''));
+    }catch(e){
+        console.log(e.message)
+    }
+    return tree;
+};
 rest.get('/:uid',(rq,rs)=>{
     rs.send(online.has(rq.params.uid))
 })
@@ -41,11 +68,19 @@ rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
     rs.send(rq.files.length);
 })
 io.on('connection', (socket) => {
-    socket.on('set', (roomName) => {
+    socket.on('set',async (roomName) => {
         console.log(`${socket.id} is joining room: ${roomName}`);
         socket.join(roomName);
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
+        const tree = ckFls(path.join(__dirname,'chtFls',roomName))
+        let size = encod.encode(tree.join('')).length
+        const len = Math.ceil(size / 1048576);
+        const iterate = tree.length / len
+        for(let i =0;i<iterate;i++){
+            // io.to(roomName).emit('wait',tree.)
+        }
+        
     });
     socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
     socket.on('offer', (to, yar,offer) => {
