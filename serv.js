@@ -74,12 +74,13 @@ io.on('connection', (socket) => {
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
         const tree = ckFls(path.join(__dirname,'chtFls',roomName))
-        let size = encod.encode(tree.join('')).length
-        const len = Math.ceil(size / 1048576);
-        const iterate = tree.length / len
-        for(let i =0;i<iterate;i++){
-            // io.to(roomName).emit('wait',tree.)
-        }
+        io.to(roomName).emit('wait',tree)
+        // let size = encod.encode(tree.join('')).length
+        // const len = Math.ceil(size / 1048576);
+        // const iterate = tree.length / len
+        // for(let i =0;i<iterate;i++){
+        //     // io.to(roomName).emit('wait',tree.)
+        // }
         
     });
     socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
