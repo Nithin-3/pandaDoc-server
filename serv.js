@@ -10,11 +10,11 @@ const rest = exp();
 rest.use(cors())
 rest.use(exp.json())
 const server = https.createServer(rest);
-const io = new Server (server, {
+const io = new Server(server, {
     cors: {
         origin: "*",
     },
-}); 
+});
 const online = new Map();
 const onSock = new Map();
 const saveSys = mult.diskStorage({
@@ -28,13 +28,14 @@ const saveSys = mult.diskStorage({
         cb(null,`${Date.now()}°${Math.round(Math.random() * 1E9)}°${file.originalname}`)
     }
 })
-const fls = mult({saveSys})
+const fls = mult({storage: saveSys})
 const onlineCk = (rq,rs,next)=>{
     if(!online.has(rq.headers.auth)) return rs.status(403).send("unknown sender")
     next()
 }
-const ckFls = (Path) => {
+const ckFls = (Path,uid) => {
     const tree = [];
+    const rems = `${path.join(__dirname,'chtFls',uid)}/`
     const rec = (currentPath) => {
         try {
             const items = fs.readdirSync(currentPath);
@@ -44,7 +45,7 @@ const ckFls = (Path) => {
                 if (stats.isDirectory()) {
                     rec(fullPath);
                 } else if (stats.isFile()) {
-                    tree.push(fullPath.replace(`${__dirname}`,''));
+                    tree.push(fullPath.replace(rems,''));
                 }
             }
         } catch (error) {
@@ -54,17 +55,32 @@ const ckFls = (Path) => {
     try{
         const meta = fs.statSync(Path);
         meta.isDirectory() && rec(Path);
-        meta.isFile() && tree.push(Path.replace(`${__dirname}`,''));
+        meta.isFile() && tree.push(Path.replace(rems,''));
     }catch(e){
         console.log(e.message)
     }
     return tree;
 };
+rest.get('/dow/:yar/:fls',(rq,rs)=>{
+    if(online.has(rq.params.yar)){
+        rs.download(path.join(__dirname,'/chtFls/',rq.params.yar,rq.params.fls))
+    }else{
+        rs.status(403).send('poda punda')
+    }
+})
+rest.delete('/dow/:yar',(rq,rs)=>{
+    if(online.has(rq.params.yar)){
+        fs.unlink(path.join(__dirname,'/chtFls/',rq.params.yar))
+        rs.status(200).send('done')
+    }else{
+        rs.status(403).send('poda punda')
+    }
+
+})
 rest.get('/:uid',(rq,rs)=>{
     rs.send(online.has(rq.params.uid))
 })
 rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
-    console.log(rq.files);
     rs.send(rq.files.length);
 })
 io.on('connection', (socket) => {
@@ -73,23 +89,16 @@ io.on('connection', (socket) => {
         socket.join(roomName);
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
-        const tree = ckFls(path.join(__dirname,'chtFls',roomName))
+        const tree = ckFls(path.join(__dirname,'chtFls',roomName),roomName)
         io.to(roomName).emit('wait',tree)
-        // let size = encod.encode(tree.join('')).length
-        // const len = Math.ceil(size / 1048576);
-        // const iterate = tree.length / len
-        // for(let i =0;i<iterate;i++){
-        //     // io.to(roomName).emit('wait',tree.)
-        // }
-        
     });
     socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
-    socket.on('offer', (to, yar,offer) => {
+    socket.on('offer', (to, yar, offer) => {
         console.log(`offer=> ${yar} => ${to}`);
         io.to(to).emit('offer',yar, offer)});
     socket.on('answer', (to, yar, answer) => {
         console.log(`answer => ${yar} => ${to} `);
-    io.to(to).emit('answer',yar, answer)});
+        io.to(to).emit('answer',yar, answer)});
     socket.on('ice', (to, yar, candidate) => {
         console.log(`ice => ${yar} => ${to} `);
         io.to(to).emit('ice',yar, candidate)});
@@ -129,3 +138,4 @@ io.on('connection', (socket) => {
     });
 });
 server.listen(3030)
+
