@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const {Server} = require('socket.io');
 const cors = require('cors');
+const { console } = require('inspector');
 const encod = new TextEncoder();
 const rest = exp();
 rest.use(cors())
@@ -49,7 +50,7 @@ const ckFls = (Path) => {
                 }
             }
         } catch (error) {
-            console.error('Error reading directory:', error);
+            console.error(error.message);
         }
     };
     try{
@@ -61,16 +62,21 @@ const ckFls = (Path) => {
     }
     return tree;
 };
-rest.get('/dow/:yar/:fls',(rq,rs)=>{
+rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
+    console.log(rq.params.yar,rq.params.fls)
     if(online.has(rq.params.yar)){
-        rs.download(path.join(__dirname,'/chtFls/',rq.params.yar,rq.params.fls))
+        rs.download(path.join(__dirname,'/chtFls/',rq.params.yar,rq.params.uid,rq.params.fls))
     }else{
         rs.status(403).send('poda punda')
     }
 })
-rest.delete('/dow/:yar',(rq,rs)=>{
+rest.delete('/dow/:yar/:uid/:fls',(rq,rs)=>{
     if(online.has(rq.params.yar)){
-        fs.unlink(path.join(__dirname,'/chtFls/',rq.params.yar))
+        fs.unlink(path.join(__dirname,'chtFls',rq.params.yar,rq.params.uid,rq.params.fls),er=>{
+            if (!er?.message.includes('no such file or directory')) {
+                console.log(er)
+            }
+        })
         rs.status(200).send('done')
     }else{
         rs.status(403).send('poda punda')
@@ -103,30 +109,30 @@ io.on('connection', (socket) => {
             online.delete(room)
             onSock.delete(socket.id)
         }else{
-            const data = "unknown user disconnected"
-            const options = {
-                hostname: 'ntfy.sh',
-                path: '/eno',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Content-Length': data.length
-                }
-            };
-            const req = https.request(options, res => {
-                let body = '';
-                res.on('data', chunk => {
-                    body += chunk;
-                });
-                res.on('end', () => {
-                    console.log('Response:', body);
-                });
-            });
-            req.on('error', error => {
-                console.error('Error:', error);
-            });
-            req.write(data);
-            req.end();
+            // const data = "unknown user disconnected"
+            // const options = {
+            //     hostname: 'ntfy.sh',
+            //     path: '/eno',
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/x-www-form-urlencoded',
+            //         'Content-Length': data.length
+            //     }
+            // };
+            // const req = https.request(options, res => {
+            //     let body = '';
+            //     res.on('data', chunk => {
+            //         body += chunk;
+            //     });
+            //     res.on('end', () => {
+            //         console.log('Response:', body);
+            //     });
+            // });
+            // req.on('error', error => {
+            //     console.error('Error:', error);
+            // });
+            // req.write(data);
+            // req.end();
         }
     });
 });
