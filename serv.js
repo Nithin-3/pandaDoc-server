@@ -33,9 +33,9 @@ const onlineCk = (rq,rs,next)=>{
     if(!online.has(rq.headers.auth)) return rs.status(403).send("unknown sender")
     next()
 }
-const ckFls = (Path,uid) => {
+const ckFls = (Path) => {
     const tree = [];
-    const rems = `${path.join(__dirname,'chtFls',uid)}/`
+    const rems = `${Path}/`
     const rec = (currentPath) => {
         try {
             const items = fs.readdirSync(currentPath);
@@ -85,23 +85,16 @@ rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
 })
 io.on('connection', (socket) => {
     socket.on('set',async (roomName) => {
-        console.log(`${socket.id} is joining room: ${roomName}`);
         socket.join(roomName);
         onSock.set(socket.id,roomName);
         online.set(roomName,socket.id);
-        const tree = ckFls(path.join(__dirname,'chtFls',roomName),roomName)
+        const tree = ckFls(path.join(__dirname,'chtFls',roomName))
         io.to(roomName).emit('wait',tree)
     });
     socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
-    socket.on('offer', (to, yar, offer) => {
-        console.log(`offer=> ${yar} => ${to}`);
-        io.to(to).emit('offer',yar, offer)});
-    socket.on('answer', (to, yar, answer) => {
-        console.log(`answer => ${yar} => ${to} `);
-        io.to(to).emit('answer',yar, answer)});
-    socket.on('ice', (to, yar, candidate) => {
-        console.log(`ice => ${yar} => ${to} `);
-        io.to(to).emit('ice',yar, candidate)});
+    socket.on('offer', (to, yar, offer) => io.to(to).emit('offer',yar, offer));
+    socket.on('answer', (to, yar, answer) => io.to(to).emit('answer',yar, answer));
+    socket.on('ice', (to, yar, candidate) => io.to(to).emit('ice',yar, candidate));
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
     socket.on('disconnect', () => {
