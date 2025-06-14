@@ -63,7 +63,7 @@ const ckFls = (Path) => {
     return tree;
 };
 rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
-    console.log(rq.params.yar,rq.params.fls)
+    console.log(rq.params.yar,rq.params.fls);
     if(online.has(rq.params.yar)){
         rs.download(path.join(__dirname,'/chtFls/',rq.params.yar,rq.params.uid,rq.params.fls))
     }else{
