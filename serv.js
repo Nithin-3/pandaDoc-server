@@ -71,6 +71,7 @@ rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
     }
 })
 rest.delete('/dow/:yar/:uid/:fls',(rq,rs)=>{
+    console.log(rq.params.yar,rq.params.fls);
     if(online.has(rq.params.yar)){
         fs.unlink(path.join(__dirname,'chtFls',rq.params.yar,rq.params.uid,rq.params.fls),er=>{
             if (!er?.message.includes('no such file or directory')) {
