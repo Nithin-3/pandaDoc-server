@@ -6,7 +6,7 @@ const path = require('path');
 const {Server} = require('socket.io');
 const cors = require('cors');
 const { console } = require('inspector');
-const encod = new TextEncoder();
+// const encod = new TextEncoder();
 const rest = exp();
 rest.use(cors())
 rest.use(exp.json())
@@ -14,10 +14,11 @@ const server = https.createServer(rest);
 const io = new Server(server, {
     cors: {
         origin: "*",
+        allowedHeaders:['Content-Type','auth'],
+        methods:['GET', 'POST', 'DELETE']
     },
 });
-const online = new Map();
-const onSock = new Map();
+const online = new Set();
 const saveSys = mult.diskStorage({
     destination:(rq,_file,cb)=>{
         const { uid, yar } = rq.body
@@ -34,36 +35,39 @@ const onlineCk = (rq,rs,next)=>{
     if(!online.has(rq.headers.auth)) return rs.status(403).send("unknown sender")
     next()
 }
-const ckFls = (Path) => {
+const ckFls = async (Path) => {
     const tree = [];
-    const rems = `${Path}/`
-    const rec = (currentPath) => {
+    const rems = `${Path}/`;
+    const rec = async (currentPath) => {
         try {
-            const items = fs.readdirSync(currentPath);
+            const items = await fs.promises.readdir(currentPath);
             for (const item of items) {
                 const fullPath = path.join(currentPath, item);
-                const stats = fs.statSync(fullPath);
+                const stats = await fs.promises.stat(fullPath);
                 if (stats.isDirectory()) {
-                    rec(fullPath);
+                    await rec(fullPath);
                 } else if (stats.isFile()) {
-                    tree.push(fullPath.replace(rems,''));
+                    tree.push(fullPath.replace(rems, ''));
                 }
             }
         } catch (error) {
             console.error(error.message);
         }
     };
-    try{
-        const meta = fs.statSync(Path);
-        meta.isDirectory() && rec(Path);
-        meta.isFile() && tree.push(Path.replace(rems,''));
-    }catch(e){
-        console.log(e.message)
+
+    try {
+        const meta = await fs.promises.stat(Path);
+        if (meta.isDirectory()) {
+            await rec(Path);
+        } else {
+            tree.push(Path.replace(rems, ''));
+        }
+    } catch (e) {
+        console.log(e.message);
     }
     return tree;
 };
 rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
-    console.log(rq.params.yar,rq.params.fls);
     if(online.has(rq.params.yar)){
         rs.download(path.join(__dirname,'/chtFls/',rq.params.yar,rq.params.uid,rq.params.fls))
     }else{
@@ -71,7 +75,6 @@ rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
     }
 })
 rest.delete('/dow/:yar/:uid/:fls',(rq,rs)=>{
-    console.log(rq.params.yar,rq.params.fls);
     if(online.has(rq.params.yar)){
         fs.unlink(path.join(__dirname,'chtFls',rq.params.yar,rq.params.uid,rq.params.fls),er=>{
             if (!er?.message.includes('no such file or directory')) {
@@ -91,10 +94,10 @@ rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
     rs.send(rq.files.length);
 })
 io.on('connection', (socket) => {
+    console.log('dfwd')
     socket.on('set',async (roomName) => {
         socket.join(roomName);
-        onSock.set(socket.id,roomName);
-        online.set(roomName,socket.id);
+        online.add(roomName);
         const tree = ckFls(path.join(__dirname,'chtFls',roomName))
         io.to(roomName).emit('wait',tree)
     });
@@ -105,11 +108,10 @@ io.on('connection', (socket) => {
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
     socket.on('disconnect', () => {
-        const room = onSock.get(socket.id)
-        if(room){
-            online.delete(room)
-            onSock.delete(socket.id)
-        }else{
+        const roon = socket.rooms.filter(v=>v!=socket.id)
+        roon.forEach(r=> {
+            online.delete(r)
+        });
             // const data = "unknown user disconnected"
             // const options = {
             //     hostname: 'ntfy.sh',
@@ -134,7 +136,6 @@ io.on('connection', (socket) => {
             // });
             // req.write(data);
             // req.end();
-        }
     });
 });
 server.listen(3030)

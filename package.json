@@ -1,11 +1,10 @@
 {
-  "name": "pandapdf-",
+  "name": "pandaDoc",
   "version": "1.0.0",
   "main": "serv.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "ninja",
   "license": "ISC",
   "description": "",
   "dependencies": {
