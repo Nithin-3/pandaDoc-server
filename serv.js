@@ -19,6 +19,7 @@ const io = new Server(server, {
     },
 });
 const online = new Set();
+const msgs = {};
 const saveSys = mult.diskStorage({
     destination:(rq,_file,cb)=>{
         const { uid, yar } = rq.body
@@ -94,14 +95,23 @@ rest.post('/',onlineCk,fls.array('files',10),(rq,rs)=>{
     rs.send(rq.files.length);
 })
 io.on('connection', (socket) => {
-    console.log('dfwd')
     socket.on('set',async (roomName) => {
         socket.join(roomName);
         online.add(roomName);
         const tree = ckFls(path.join(__dirname,'chtFls',roomName))
         io.to(roomName).emit('wait',tree)
+        msgs[roomName]?.forEach(m=>{
+            io.to(roomName).emit('msg',m)
+        })
+        msgs[roomName] && delete msgs[roomName]
     });
-    socket.on('chat', (roomName, message) => io.to(roomName).emit("msg", message));
+    socket.on('chat', (roomName, message) =>{
+        if(online.has(roomName)){
+            io.to(roomName).emit("msg", message)
+        }else {
+            msgs[roomName] = [...(msgs[roomName] || []),message]
+        }
+    } );
     socket.on('offer', (to, yar, offer) => io.to(to).emit('offer',yar, offer));
     socket.on('answer', (to, yar, answer) => io.to(to).emit('answer',yar, answer));
     socket.on('ice', (to, yar, candidate) => io.to(to).emit('ice',yar, candidate));
