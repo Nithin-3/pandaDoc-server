@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "main": "serv.js",
   "scripts": {
+        "start" : "node serv.js"
   },
   "author": "ninja",
   "license": "ISC",
-  "description": "",
+  "description": "This Node.js backend application is designed to facilitate real-time communication and peer connections using Socket.IO, enabling seamless chat functionality. It supports file handling, allowing users to upload and share files within the chat environment. Additionally, the backend includes a REST API that checks and manages user online status, ensuring that users can see who is currently active in the chat. The application is built with Express, providing a robust framework for handling HTTP requests and responses, making it efficient and scalable for real-time interactions.",
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^5.1.0",
