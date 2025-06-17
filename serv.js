@@ -51,7 +51,7 @@ const ckFls = async (Path) => {
                 }
             }
         } catch (error) {
-            console.error(error.message);
+            console.log(error.message);
         }
     };
 
