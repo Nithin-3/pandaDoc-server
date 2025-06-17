@@ -119,6 +119,11 @@ io.on('connection', (socket) => {
     socket.on('ice', (to, yar, candidate) => io.to(to).emit('ice',yar, candidate));
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
+    socket.on('exit',()=>{
+        socket.rooms.forEach(r=>{
+            if(r!==socket.id) online.delete(r);
+        })
+    })
     socket.on('disconnect', () => {
         socket.rooms.forEach(r=>{
             if(r!==socket.id) online.delete(r);
