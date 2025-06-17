@@ -5,7 +5,6 @@ const fs = require('fs');
 const path = require('path');
 const {Server} = require('socket.io');
 const cors = require('cors');
-const { console } = require('inspector');
 // const encod = new TextEncoder();
 const rest = exp();
 rest.use(cors())
@@ -118,10 +117,11 @@ io.on('connection', (socket) => {
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
     socket.on('disconnect', () => {
-        const roon = socket.rooms.filter(v=>v!=socket.id)
-        roon.forEach(r=> {
-            online.delete(r)
-        });
+        for (const r of socket.rooms) {
+    if (r !== socket.id) {
+        online.delete(r);
+    }
+}
             // const data = "unknown user disconnected"
             // const options = {
             //     hostname: 'ntfy.sh',
