@@ -17,6 +17,7 @@ rest.use(cors())
 rest.use(exp.json())
 const online = new Set();
 const msgs = {};
+const blockS = {};
 const saveSys = mult.diskStorage({
     destination:(rq,_file,cb)=>{
         const { uid, yar } = rq.body
@@ -72,7 +73,7 @@ rest.get('/dow/:yar/:uid/:fls',(rq,rs)=>{
 rest.delete('/dow/:yar/:uid/:fls',(rq,rs)=>{
     if(online.has(rq.params.yar)){
         fs.unlink(path.join(__dirname,'chtFls',rq.params.yar,rq.params.uid,rq.params.fls),er=>{
-            if (!er?.message.includes('no such file or directory')) console.log(er.message);
+            if (er && !er.message.includes('no such file or directory')) console.log(er.message);
         })
         rs.status(200).send('done')
     }else{
@@ -106,6 +107,10 @@ io.on('connection', (socket) => {
             io.to(roomName).emit('msg',m)
         })
         msgs[roomName] && delete msgs[roomName]
+        blockS[roomName]?.forEach(s=>{
+            io.to(roomName).emit(s[0],s[1])
+        })
+        blockS[roomName] && delete blockS[roomName]
     });
     socket.on('chat', (roomName, message) =>{
         if(online.has(roomName)){
@@ -120,14 +125,14 @@ io.on('connection', (socket) => {
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
     socket.on("block",(to,yar)=>{
-        fs.rm(path.join(__dirname,'chtFls',yar,to),{recursive:true,force:true},err=>{
-            err && console.log(err);
-            socket.emit('block',yar)
-        });
-
+         if(online.has(to))
+            blockS[to] = [ ...(blockS[to] || []), ['unblock',yar]];
+        socket.to(to).emit('block',yar)
     })
-    socket.on('blocked',(to,yar)=>{
-        io.to(to).emit('blocked',yar);
+    socket.on('unblock',(to,yar)=>{
+         if(online.has(to))
+            blockS[to] = [ ...(blockS[to] || []), ['unblock',yar]];
+        io.to(to).emit('unblock',yar);
     })
     socket.on('exit',()=>{
         socket.rooms.forEach(r=>{
