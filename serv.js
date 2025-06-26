@@ -119,6 +119,16 @@ io.on('connection', (socket) => {
     socket.on('ice', (to, yar, candidate) => io.to(to).emit('ice',yar, candidate));
     socket.on('encall', (to) => io.to(to).emit('encall'));
     socket.on('rqcall', (to, yar, vid) => io.to(to).emit('rqcall',yar,vid));
+    socket.on("block",(to,yar)=>{
+        fs.rm(path.join(__dirname,'chtFls',yar,to),{recursive:true,force:true},err=>{
+            err && console.log(err);
+            socket.emit('block',yar)
+        });
+
+    })
+    socket.on('blocked',(to,yar)=>{
+        io.to(to).emit('blocked',yar);
+    })
     socket.on('exit',()=>{
         socket.rooms.forEach(r=>{
             if(r!==socket.id) online.delete(r);
