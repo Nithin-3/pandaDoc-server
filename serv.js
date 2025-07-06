@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const {Server} = require('socket.io');
 const cors = require('cors');
-// const encod = new TextEncoder();
 const comp = require('compression')
 const rest = exp();
 rest.use(comp({
@@ -116,7 +115,9 @@ io.on('connection', (socket) => {
         if(online.has(roomName)){
             io.to(roomName).emit("msg", message)
         }else {
-            msgs[roomName] = [...(msgs[roomName] || []),message]
+            if (msgs[roomName] && !msgs[roomName].find(v=>v.time == message.time)) {
+                msgs[roomName] = [...(msgs[roomName] || []),message]
+            }
         }
     } );
     socket.on('offer', (to, yar, offer) => io.to(to).emit('offer',yar, offer));
